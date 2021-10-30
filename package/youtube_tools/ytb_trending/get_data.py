@@ -1,19 +1,23 @@
 import pandas as pd
 import requests, time
-import sys
 import warnings
 warnings.filterwarnings("ignore")
+import os
+import sys
+from datetime import datetime
 
-api_key = ''
+sys.path.append(os.getcwd())
+try:
+    from youtube_tools import setting
+except:
+    print("No 'settings.py' file in ", os.getcwd())
+
 # List of simple to collect features
 snippet_features = ["title",
                     "publishedAt",
                     "channelId",
                     "channelTitle",
                     "categoryId"]
-
-# Any characters to exclude, generally these are things that become problematic in CSV files
-unsafe_characters = ['\n', '"']
 
 # Used to identify columns, currently hardcoded order
 header = ["video_id"] + snippet_features + ["trending_date", "tags", "view_count", "likes", "dislikes",
@@ -23,14 +27,14 @@ header = ["video_id"] + snippet_features + ["trending_date", "tags", "view_count
 
 def prepare_feature(feature):
     # Removes any character from the unsafe characters list and surrounds the whole item in quotes
-    for ch in unsafe_characters:
+    for ch in ['\n', '"']:
         feature = str(feature).replace(ch, "")
     return f'"{feature}"'
 
 
 def api_request(page_token, country_code):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={api_key}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={os.getenv('API_KEY')}"
     request = requests.get(request_url)
     if request.status_code == 429:
         print("Temp-Banned due to excess requests, please wait and continue later")
@@ -119,11 +123,12 @@ def get_pages(country_code, next_page_token="&"):
     return country_data
 
 
-def get_data():
+def process_data(country_codes, log=None):
     df_trending = pd.DataFrame(columns=[header + ["country_code", 'trending_id']])
     count = 1
     for country_code in country_codes:
-        print(country_code, count)
+        log.info("START PROCESSING DATA!")
+        print(count, ':', country_code)
         count += 1
         trending = pd.DataFrame(get_pages(country_code), columns=header)
         trending['country_code'] = country_code
@@ -132,42 +137,18 @@ def get_data():
             df_trending = df_trending.append(trending, ignore_index=True, sort=False)
         except:
             df_trending = trending
+        if log is not None:
+            log.info("country_code: {}, n_row: {}".format(country_code, len(trending)))
     df_trending = df_trending.rename(columns={'publishedAt': 'published_at',
-                                'channelId': 'channel_id',
-                                'channelTitle': 'channel_title',
-                                'categoryId': 'category_id'})
+                                              'channelId': 'channel_id',
+                                              'channelTitle': 'channel_title',
+                                              'categoryId': 'category_id'})
+    df_trending.published_at = pd.to_datetime(df_trending.published_at)
+    df_trending.trending_date = pd.to_datetime(df_trending.trending_date)
+    df_trending[['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']] = df_trending[
+        ['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']].astype(int)
+    df_trending = df_trending.drop(columns=['comments_disabled', 'ratings_disabled'], axis=0)
+    df_trending['time_running'] = datetime.now().replace(microsecond=0)
+    if log is not None:
+        log.info("WELL DONE!, n_row: {}".format(len(df_trending)))
     return df_trending
-
-
-if __name__ == "__main__":
-    from db_requestor import get_df_by_query
-    from sqlalchemy import create_engine
-    from datetime import datetime
-
-    t = datetime.now()
-    for _ in range(30):
-        df_country_codes = get_df_by_query("select * from country_list")
-        api_key, country_codes = 'AIzaSyA6UXp0cLa02j6I57HqpCp_KutJl4tbBmI', df_country_codes.country_code,
-        trending_data_ = get_data()
-        temps = trending_data_.copy()
-        temps.published_at = pd.to_datetime(temps.published_at)
-        temps.trending_date = pd.to_datetime(temps.trending_date)
-        temps[['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']] = temps[
-            ['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']].astype(int)
-        trending_data = temps.drop(columns=['comments_disabled', 'ratings_disabled'], axis=0)
-
-        hostname = '27.71.232.95'
-        username = 'youtube'
-        password = '1'
-        database = 'youtube'
-
-        engine = create_engine(f'postgresql://{username}:{password}@{hostname}:5432/{database}')
-        trending_data['runtime'] = datetime.now().replace(microsecond=0)
-
-        # trending_data.head(2)
-        trending_data.to_sql('youtube_trending_all',
-                             con=engine,
-                             if_exists='append',
-                             index=False,
-                             method='multi')
-    print(datetime.now()-t)
