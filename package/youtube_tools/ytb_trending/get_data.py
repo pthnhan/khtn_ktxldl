@@ -126,8 +126,8 @@ def get_pages(country_code, next_page_token="&"):
 def process_data(country_codes, log=None):
     df_trending = pd.DataFrame(columns=[header + ["country_code", 'trending_id']])
     count = 1
+    log.info("START PROCESSING DATA!")
     for country_code in country_codes:
-        log.info("START PROCESSING DATA!")
         print(count, ':', country_code)
         count += 1
         trending = pd.DataFrame(get_pages(country_code), columns=header)
