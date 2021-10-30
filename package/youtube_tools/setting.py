@@ -11,4 +11,4 @@ env_path = Path('/home/pthnhan/Desktop/other/khtn_ktxldl/example/envfile') / '.e
 load_dotenv(dotenv_path=env_path)
 print(env_path)
 # load_dotenv(find_dotenv())
-# print(find_dotenv())
+print(find_dotenv())

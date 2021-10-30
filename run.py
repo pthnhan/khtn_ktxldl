@@ -5,6 +5,7 @@ from youtube_tools.utils.db_requestor import DBRequestor
 from youtube_tools.ytb_trending.get_data import process_data
 from sqlalchemy import create_engine
 from datetime import datetime
+
 sys.path.append(os.getcwd())
 try:
     from youtube_tools import setting
@@ -14,6 +15,7 @@ except:
 from youtube_tools.utils.logger import setup_logger
 
 import argparse
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--option", help="VN or world", default=0, type=int)  # VN is 1
 args = parser.parse_args()
@@ -28,13 +30,20 @@ if __name__ == '__main__':
     a.get_info_db(database=database, user=username, password=password, host=host, port=port)
     df_country_codes = a.get_df_by_query("select * from country_list")
     option = args.option
+    t = datetime.now()
     if option == 1:
-        log = setup_logger("info_data_youtube_trending", "/home/pthnhan/Desktop/other/khtn_ktxldl/ytb_trending_VN.txt",
+        log = setup_logger("info_data_youtube_trending",
+                           "/home/pthnhan/Desktop/other/khtn_ktxldl/logs/{}_{}_{}_ytb_trending_VN.txt".format(t.year,
+                                                                                                              t.month,
+                                                                                                              t.day),
                            mode='a+')
         country_codes = ['VN']
         table_name = 'ytb_trending_vn'
     else:
-        log = setup_logger("info_data_youtube_trending", "/home/pthnhan/Desktop/other/khtn_ktxldl/ytb_trending_all.txt",
+        log = setup_logger("info_data_youtube_trending",
+                           "/home/pthnhan/Desktop/other/khtn_ktxldl/logs/{}_{}_{}_ytb_trending_all.txt".format(t.year,
+                                                                                                               t.month,
+                                                                                                               t.day),
                            mode='a+')
         country_codes = df_country_codes.country_code
         table_name = 'ytb_trending_world'
@@ -47,3 +56,4 @@ if __name__ == '__main__':
                          index=False,
                          method='multi'
                          )
+    log.info("COMPLETED! SAVED DATA TO DATABASE!")
