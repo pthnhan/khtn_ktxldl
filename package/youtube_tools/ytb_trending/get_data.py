@@ -41,7 +41,7 @@ def prepare_feature(feature):
 
 def api_request(page_token, country_code):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=250&key={os.getenv('API_KEY')}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={os.getenv('API_KEY')}"
     request = requests.get(request_url)
     if request.status_code == 429:
         log_error.info("Temp-Banned due to excess requests, please wait and continue later")
