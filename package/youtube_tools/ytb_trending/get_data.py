@@ -5,6 +5,12 @@ warnings.filterwarnings("ignore")
 import os
 import sys
 from datetime import datetime
+from youtube_tools.utils.logger import setup_logger
+t = datetime.now()
+log_error = setup_logger("error_get_data",
+                           "/home/pthnhan/Desktop/other/khtn_ktxldl/logs/{}_{}_{}_error_get_data.txt".format(t.year,
+                                                                                                              t.month,
+                                                                                                              t.day))
 
 sys.path.append(os.getcwd())
 try:
@@ -37,7 +43,7 @@ def api_request(page_token, country_code):
     request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={os.getenv('API_KEY')}"
     request = requests.get(request_url)
     if request.status_code == 429:
-        print("Temp-Banned due to excess requests, please wait and continue later")
+        log_error.info("Temp-Banned due to excess requests, please wait and continue later")
         sys.exit()
     return request.json()
 

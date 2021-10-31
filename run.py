@@ -5,6 +5,7 @@ from youtube_tools.utils.db_requestor import DBRequestor
 from youtube_tools.ytb_trending.get_data import process_data
 from sqlalchemy import create_engine
 from datetime import datetime
+from time import sleep
 
 sys.path.append(os.getcwd())
 try:
@@ -40,6 +41,7 @@ if __name__ == '__main__':
         country_codes = ['VN']
         table_name = 'ytb_trending_vn'
     else:
+        sleep(10)
         log = setup_logger("info_data_youtube_trending",
                            "/home/pthnhan/Desktop/other/khtn_ktxldl/logs/{}_{}_{}_ytb_trending_all.txt".format(t.year,
                                                                                                                t.month,
