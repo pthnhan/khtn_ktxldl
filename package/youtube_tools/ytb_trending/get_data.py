@@ -3,21 +3,15 @@ import requests, time
 import warnings
 
 warnings.filterwarnings("ignore")
-import os
+
 import sys
 from datetime import datetime
 from youtube_tools.utils.logger import setup_logger
 
 t = datetime.now()
 log_error = setup_logger("error_get_data", "./{}_{}_{}_error_get_data.txt".format(t.year,
-                                                                                       t.month,
-                                                                                       t.day))
-
-sys.path.append(os.getcwd())
-try:
-    from youtube_tools import setting
-except:
-    print("No 'settings.py' file in ", os.getcwd())
+                                                                                  t.month,
+                                                                                  t.day))
 
 # List of simple to collect features
 snippet_features = ["title",
@@ -39,9 +33,9 @@ def prepare_feature(feature):
     return f'"{feature}"'
 
 
-def api_request(page_token, country_code):
+def api_request(page_token, country_code, api_key):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={os.getenv('API_KEY')}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={api_key}"
     request = requests.get(request_url)
     if request.status_code == 429:
         log_error.info("Temp-Banned due to excess requests, please wait and continue later")
@@ -110,14 +104,14 @@ def get_videos(items):
     return lines
 
 
-def get_pages(country_code, next_page_token="&"):
+def get_pages(country_code, api_key, next_page_token="&"):
     country_data = []
 
     # Because the API uses page tokens (which are literally just the same function of numbers everywhere) it is much
     # more inconvenient to iterate over pages, but that is what is done here.
     while next_page_token is not None:
         # A page of data i.e. a list of videos and all needed data
-        video_data_page = api_request(next_page_token, country_code)
+        video_data_page = api_request(next_page_token, country_code, api_key)
 
         # Get the next page token and build a string which can be injected into the request with it, unless it's None,
         # then let the whole thing be None so that the loop ends after this cycle
@@ -130,14 +124,14 @@ def get_pages(country_code, next_page_token="&"):
     return country_data
 
 
-def process_data(country_codes, log=None):
+def process_data(country_codes, api_key, log=None):
     df_trending = pd.DataFrame(columns=[header + ["country_code", 'trending_id']])
     count = 1
     log.info("START PROCESSING DATA!")
     for country_code in country_codes:
         print(count, ':', country_code)
         count += 1
-        trending = pd.DataFrame(get_pages(country_code), columns=header)
+        trending = pd.DataFrame(get_pages(country_code, api_key), columns=header)
         trending['country_code'] = country_code
         trending['trending_id'] = [i for i in range(1, len(trending) + 1)]
         try:

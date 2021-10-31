@@ -19,6 +19,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--option", help="VN or world", default=0, type=int)  # VN is 1
+parser.add_argument("-a", "--api_key", help="API KEY", default=1, type=int)  # 1 or 2
 args = parser.parse_args()
 
 if __name__ == '__main__':
@@ -50,8 +51,15 @@ if __name__ == '__main__':
         country_codes = df_country_codes.country_code
         table_name = 'ytb_trending_world'
 
+    api = args.api_key
+
+    if api == 1:
+        api_key = os.getenv('API_KEY_1')
+    else:
+        api_key = os.getenv('API_KEY_2')
+
     engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(username, password, host, database))
-    trending_data = process_data(country_codes, log)
+    trending_data = process_data(country_codes, api_key, log)
     trending_data.to_sql(table_name,
                          con=engine,
                          if_exists='append',
