@@ -1,16 +1,17 @@
 import pandas as pd
 import requests, time
 import warnings
+
 warnings.filterwarnings("ignore")
 import os
 import sys
 from datetime import datetime
 from youtube_tools.utils.logger import setup_logger
+
 t = datetime.now()
-log_error = setup_logger("error_get_data",
-                           "/home/pthnhan/Desktop/other/khtn_ktxldl/logs/{}_{}_{}_error_get_data.txt".format(t.year,
-                                                                                                              t.month,
-                                                                                                              t.day))
+log_error = setup_logger("error_get_data", "./logs/{}_{}_{}_error_get_data.txt".format(t.year,
+                                                                                       t.month,
+                                                                                       t.day))
 
 sys.path.append(os.getcwd())
 try:
@@ -138,7 +139,7 @@ def process_data(country_codes, log=None):
         count += 1
         trending = pd.DataFrame(get_pages(country_code), columns=header)
         trending['country_code'] = country_code
-        trending['trending_id'] = [i for i in range(1, len(trending)+1)]
+        trending['trending_id'] = [i for i in range(1, len(trending) + 1)]
         try:
             df_trending = df_trending.append(trending, ignore_index=True, sort=False)
         except:
