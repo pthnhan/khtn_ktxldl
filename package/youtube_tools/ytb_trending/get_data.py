@@ -149,7 +149,7 @@ def process_data(country_codes, api_key, log=None):
     df_trending[['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']] = df_trending[
         ['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']].astype(int)
     df_trending = df_trending.drop(columns=['comments_disabled', 'ratings_disabled'], axis=0)
-    df_trending['time_running'] = datetime.now().replace(microsecond=0)
+    df_trending['runtime'] = datetime.now().replace(microsecond=0)
     if log is not None:
         log.info("WELL DONE!, n_row: {}".format(len(df_trending)))
     return df_trending

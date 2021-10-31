@@ -40,7 +40,7 @@ if __name__ == '__main__':
                                                                                                               t.day),
                            mode='a+')
         country_codes = ['VN']
-        table_name = 'ytb_trending_vn'
+        table_name = 'vn_ytb_trending'
     else:
         sleep(10)
         log = setup_logger("info_data_youtube_trending",
@@ -49,7 +49,7 @@ if __name__ == '__main__':
                                                                                                                t.day),
                            mode='a+')
         country_codes = df_country_codes.country_code
-        table_name = 'ytb_trending_world'
+        table_name = 'world_ytb_trending'
 
     api = args.api_key
 
@@ -60,10 +60,12 @@ if __name__ == '__main__':
 
     engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(username, password, host, database))
     trending_data = process_data(country_codes, api_key, log)
+    t = datetime.now()
     trending_data.to_sql(table_name,
                          con=engine,
                          if_exists='append',
                          index=False,
                          method='multi'
                          )
+    trending_data.to_csv("/home/pthnhan/Desktop/other/khtn_ktxldl/data/{}_{}.csv".format(t.hour, table_name))
     log.info("COMPLETED! SAVED DATA TO DATABASE!")
