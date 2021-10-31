@@ -9,7 +9,7 @@ from datetime import datetime
 from youtube_tools.utils.logger import setup_logger
 
 t = datetime.now()
-log_error = setup_logger("error_get_data", "./logs/{}_{}_{}_error_get_data.txt".format(t.year,
+log_error = setup_logger("error_get_data", "./{}_{}_{}_error_get_data.txt".format(t.year,
                                                                                        t.month,
                                                                                        t.day))
 
@@ -41,7 +41,7 @@ def prepare_feature(feature):
 
 def api_request(page_token, country_code):
     # Builds the URL and requests the JSON from it
-    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={os.getenv('API_KEY')}"
+    request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=250&key={os.getenv('API_KEY')}"
     request = requests.get(request_url)
     if request.status_code == 429:
         log_error.info("Temp-Banned due to excess requests, please wait and continue later")
