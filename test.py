@@ -20,7 +20,7 @@ df = a.get_df_by_query(
 df = df.rename(columns={'time_running': 'runtime'})
 print(len(df))
 engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(username, password, host, database))
-df.to_sql('world_ytb_trending',
+df.to_sql('xyz',
           con=engine,
           if_exists='append',
           index=False,

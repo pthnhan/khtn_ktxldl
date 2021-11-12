@@ -67,5 +67,5 @@ if __name__ == '__main__':
                          index=False,
                          method='multi'
                          )
-    trending_data.to_csv("/home/pthnhan/Desktop/other/khtn_ktxldl/data/{}_{}.csv".format(t.hour, table_name))
+    trending_data.to_csv("/home/pthnhan/Desktop/other/khtn_ktxldl/data/{}{}{}_{}_{}.csv".format(t.year, t.month, t.day, t.hour, table_name))
     log.info("COMPLETED! SAVED DATA TO DATABASE!")
