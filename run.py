@@ -17,10 +17,11 @@ except:
 from youtube_tools.utils.logger import setup_logger
 
 import argparse
+import slack
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-o", "--option", help = "VN or world", default = 1, type = int)  # VN is 1
-parser.add_argument("-a", "--api_key", help = "API KEY", default = 1, type = int)  # 1 or 2
+parser.add_argument("-o", "--option", help="VN or world", default=1, type=int)  # VN is 1
+parser.add_argument("-a", "--api_key", help="API KEY", default=1, type=int)  # 1 or 2
 args = parser.parse_args()
 
 if __name__ == '__main__':
@@ -30,25 +31,25 @@ if __name__ == '__main__':
     password = os.getenv('PASSWORD')
     host = os.getenv('HOST')
     port = os.getenv('PORT')
-    a.get_info_db(database = database, user = username, password = password, host = host, port = port)
+    a.get_info_db(database=database, user=username, password=password, host=host, port=port)
     df_country_codes = a.get_df_by_query("select * from country_list")
     option = args.option
     t = datetime.now()
     if option == 1:
         log = setup_logger("info_data_youtube_trending",
-                           "/home/thanhnhan/Desktop/khtn_ktxldl/logs/{}_{}_{}_ytb_trending_VN.txt".format(t.year,
-                                                                                                          t.month,
-                                                                                                          t.day),
-                           mode = 'a+')
+                           "{}/logs/{}_{}_{}_ytb_trending_VN.txt".format(os.getenv('FOLDER'), t.year,
+                                                                         t.month,
+                                                                         t.day),
+                           mode='a+')
         country_codes = ['VN']
         table_name = 'vn_ytb_trending'
     else:
         sleep(10)
         log = setup_logger("info_data_youtube_trending",
-                           "/home/thanhnhan/Desktop/khtn_ktxldl/logs/{}_{}_{}_ytb_trending_all.txt".format(t.year,
-                                                                                                           t.month,
-                                                                                                           t.day),
-                           mode = 'a+')
+                           "{}/logs/{}_{}_{}_ytb_trending_all.txt".format(os.getenv('FOLDER'), t.year,
+                                                                          t.month,
+                                                                          t.day),
+                           mode='a+')
         country_codes = df_country_codes.country_code
         table_name = 'world_ytb_trending'
 
@@ -62,8 +63,10 @@ if __name__ == '__main__':
     engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(username, password, host, database))
     error_folder = "{}/error_folder".format(os.getenv('FOLDER'))
     create_folder(error_folder)
-    log_error = setup_logger("error_get_data", "{}/error_get_data.txt".format(error_folder), mode = 'a+')
-    trending_data = process_data(country_codes, api_key, log, log_error)
+    log_error = setup_logger("error_get_data", "{}/error_get_data.txt".format(error_folder), mode='a+')
+    slackclient = slack.WebClient(token=os.environ['SLACK_TOKEN'])
+    slackclient.chat_postMessage(channel='#data_status', text="TABLE: {}".format(table_name))
+    trending_data = process_data(country_codes, api_key, log, log_error, slackclient)
     t = datetime.now()
     trending_data.to_sql(table_name,
                          con = engine,
@@ -72,5 +75,6 @@ if __name__ == '__main__':
                          method = 'multi'
                          )
     trending_data.to_csv(
-        "/home/thanhnhan/Desktop/khtn_ktxldl/data/{}{}{}_{}_{}.csv".format(t.year, t.month, t.day, t.hour, table_name))
+        "{}/data/{}{}{}_{}_{}.csv".format(os.getenv('FOLDER'), t.year, t.month, t.day, t.hour, table_name))
     log.info("COMPLETED! SAVED DATA TO DATABASE!")
+    slackclient.chat_postMessage(channel='#data_status', text="COMPLETED! SAVED DATA TO DATABASE!")

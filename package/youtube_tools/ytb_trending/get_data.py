@@ -124,10 +124,13 @@ def get_pages(country_code, api_key, next_page_token = "&", log_error=None):
     return country_data
 
 
-def process_data(country_codes, api_key, log = None, log_error = None):
+def process_data(country_codes, api_key, log = None, log_error = None, slackclient = None):
     df_trending = pd.DataFrame(columns = [header + ["country_code", 'trending_id']])
     count = 1
-    log.info("START PROCESSING DATA!")
+    message = ''
+    if log is not None:
+        log.info("START PROCESSING DATA!")
+    message += "START PROCESSING DATA!\n"
     for country_code in country_codes:
         print(count, ':', country_code)
         count += 1
@@ -140,6 +143,8 @@ def process_data(country_codes, api_key, log = None, log_error = None):
             df_trending = trending
         if log is not None:
             log.info("country_code: {}, n_row: {}".format(country_code, len(trending)))
+        message += "country_code: {}, n_row: {}\n".format(country_code, len(trending))
+
     df_trending = df_trending.rename(columns = {'publishedAt': 'published_at',
                                                 'channelId': 'channel_id',
                                                 'channelTitle': 'channel_title',
@@ -151,5 +156,8 @@ def process_data(country_codes, api_key, log = None, log_error = None):
     df_trending = df_trending.drop(columns = ['comments_disabled', 'ratings_disabled'], axis = 0)
     df_trending['runtime'] = datetime.now().replace(microsecond = 0)
     if log is not None:
-        log.info("WELL DONE!, n_row: {}".format(len(df_trending)))
+        log.info("WELL DONE!, n_rows: {}".format(len(df_trending)))
+    message += "WELL DONE! Sum: {}\n".format(len(df_trending))
+    if slackclient is not None:
+        slackclient.chat_postMessage(channel='#data_status', text=message)
     return df_trending
