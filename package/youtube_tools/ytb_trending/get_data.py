@@ -130,7 +130,6 @@ def process_data(country_codes, api_key, log = None, log_error = None, slackclie
     message = ''
     if log is not None:
         log.info("START PROCESSING DATA!")
-    message += "START PROCESSING DATA!\n"
     for country_code in country_codes:
         print(count, ':', country_code)
         count += 1

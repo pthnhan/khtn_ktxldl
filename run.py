@@ -65,7 +65,7 @@ if __name__ == '__main__':
     create_folder(error_folder)
     log_error = setup_logger("error_get_data", "{}/error_get_data.txt".format(error_folder), mode='a+')
     slackclient = slack.WebClient(token=os.environ['SLACK_TOKEN'])
-    slackclient.chat_postMessage(channel='#data_status', text="TABLE: {}".format(table_name))
+    slackclient.chat_postMessage(channel='#data_status', text="TABLE: {}\n START PROCESSING DATA!".format(table_name))
     trending_data = process_data(country_codes, api_key, log, log_error, slackclient)
     t = datetime.now()
     trending_data.to_sql(table_name,
@@ -76,5 +76,5 @@ if __name__ == '__main__':
                          )
     trending_data.to_csv(
         "{}/data/{}{}{}_{}_{}.csv".format(os.getenv('FOLDER'), t.year, t.month, t.day, t.hour, table_name))
-    log.info("COMPLETED! SAVED DATA TO DATABASE!")
-    slackclient.chat_postMessage(channel='#data_status', text="COMPLETED! SAVED DATA TO DATABASE!")
+    log.info("COMPLETED! SAVED DATA TO THE DATABASE!")
+    slackclient.chat_postMessage(channel='#data_status', text="COMPLETED! SAVED DATA TO THE DATABASE!")
