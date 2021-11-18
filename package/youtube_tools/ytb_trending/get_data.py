@@ -1,17 +1,14 @@
 import pandas as pd
 import requests, time
 import warnings
+from youtube_tools.utils.folder_utils import create_folder
 
 warnings.filterwarnings("ignore")
 
 import sys
 from datetime import datetime
-from youtube_tools.utils.logger import setup_logger
 
 t = datetime.now()
-log_error = setup_logger("error_get_data", "./{}_{}_{}_error_get_data.txt".format(t.year,
-                                                                                  t.month,
-                                                                                  t.day))
 
 # List of simple to collect features
 snippet_features = ["title",
@@ -33,12 +30,15 @@ def prepare_feature(feature):
     return f'"{feature}"'
 
 
-def api_request(page_token, country_code, api_key):
+def api_request(page_token, country_code, api_key, log_error=None):
     # Builds the URL and requests the JSON from it
     request_url = f"https://www.googleapis.com/youtube/v3/videos?part=id,statistics,snippet{page_token}chart=mostPopular&regionCode={country_code}&maxResults=50&key={api_key}"
     request = requests.get(request_url)
     if request.status_code == 429:
-        log_error.info("Temp-Banned due to excess requests, please wait and continue later")
+        if log_error is None:
+            print("Temp-Banned due to excess requests, please wait and continue later.")
+        else:
+            log_error.info("Temp-Banned due to excess requests, please wait and continue later.")
         sys.exit()
     return request.json()
 
@@ -104,14 +104,14 @@ def get_videos(items):
     return lines
 
 
-def get_pages(country_code, api_key, next_page_token="&"):
+def get_pages(country_code, api_key, next_page_token = "&", log_error=None):
     country_data = []
 
     # Because the API uses page tokens (which are literally just the same function of numbers everywhere) it is much
     # more inconvenient to iterate over pages, but that is what is done here.
     while next_page_token is not None:
         # A page of data i.e. a list of videos and all needed data
-        video_data_page = api_request(next_page_token, country_code, api_key)
+        video_data_page = api_request(next_page_token, country_code, api_key, log_error)
 
         # Get the next page token and build a string which can be injected into the request with it, unless it's None,
         # then let the whole thing be None so that the loop ends after this cycle
@@ -124,32 +124,32 @@ def get_pages(country_code, api_key, next_page_token="&"):
     return country_data
 
 
-def process_data(country_codes, api_key, log=None):
-    df_trending = pd.DataFrame(columns=[header + ["country_code", 'trending_id']])
+def process_data(country_codes, api_key, log = None, log_error = None):
+    df_trending = pd.DataFrame(columns = [header + ["country_code", 'trending_id']])
     count = 1
     log.info("START PROCESSING DATA!")
     for country_code in country_codes:
         print(count, ':', country_code)
         count += 1
-        trending = pd.DataFrame(get_pages(country_code, api_key), columns=header)
+        trending = pd.DataFrame(get_pages(country_code, api_key, log_error = log_error), columns = header)
         trending['country_code'] = country_code
         trending['trending_id'] = [i for i in range(1, len(trending) + 1)]
         try:
-            df_trending = df_trending.append(trending, ignore_index=True, sort=False)
+            df_trending = df_trending.append(trending, ignore_index = True, sort = False)
         except:
             df_trending = trending
         if log is not None:
             log.info("country_code: {}, n_row: {}".format(country_code, len(trending)))
-    df_trending = df_trending.rename(columns={'publishedAt': 'published_at',
-                                              'channelId': 'channel_id',
-                                              'channelTitle': 'channel_title',
-                                              'categoryId': 'category_id'})
+    df_trending = df_trending.rename(columns = {'publishedAt': 'published_at',
+                                                'channelId': 'channel_id',
+                                                'channelTitle': 'channel_title',
+                                                'categoryId': 'category_id'})
     df_trending.published_at = pd.to_datetime(df_trending.published_at)
     df_trending.trending_date = pd.to_datetime(df_trending.trending_date)
     df_trending[['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']] = df_trending[
         ['category_id', 'view_count', 'likes', 'dislikes', 'comment_count']].astype(int)
-    df_trending = df_trending.drop(columns=['comments_disabled', 'ratings_disabled'], axis=0)
-    df_trending['runtime'] = datetime.now().replace(microsecond=0)
+    df_trending = df_trending.drop(columns = ['comments_disabled', 'ratings_disabled'], axis = 0)
+    df_trending['runtime'] = datetime.now().replace(microsecond = 0)
     if log is not None:
         log.info("WELL DONE!, n_row: {}".format(len(df_trending)))
     return df_trending
