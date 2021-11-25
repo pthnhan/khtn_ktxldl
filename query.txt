@@ -1,0 +1,57 @@
+select * from (
+	select distinct on (video_id)
+	runtime,
+	video_id, video_category
+	from vn_no_of_videos_in_each_category
+	where runtime BETWEEN '2021-11-23T17:00:00Z' AND '2021-11-25T16:59:59Z'
+) a
+ORDER BY runtime DESC
+
+select
+  runtime as "time",
+  video_id as metric,
+  video_category
+from (
+	select distinct on (video_id)
+	runtime,
+	video_id, video_category
+	from vn_no_of_videos_in_each_category
+	where runtime BETWEEN '2021-11-23T17:00:00Z' AND '2021-11-25T16:59:59Z'
+) a
+ORDER BY runtime DESC
+
+
+select video_category, count(*) as ct from (
+	select distinct on (video_id)
+	runtime,
+	video_id, video_category
+	from vn_no_of_videos_in_each_category
+	where runtime BETWEEN '2021-11-23T17:00:00Z' AND '2021-11-25T16:59:59Z'
+) t
+group by 1
+
+select video_category, sum(view_count) as ct from (
+	select distinct on (video_id) * FROM (
+		select runtime,
+		video_id, video_category, view_count
+		from vn_count_views_in_each_category
+		where video_category = 'Sports'
+		ORDER BY view_count DESC
+	) a
+) t
+group by 1
+
+select *
+from vn_count_views_in_each_category
+where (view_count,runtime) in (select view_count, max(runtime) from
+							   (
+							   	select distinct on (video_id) * FROM (
+								select runtime,
+								video_id, video_category, view_count
+								from vn_count_views_in_each_category
+								where video_category = 'Sports'
+								ORDER BY view_count DESC
+								) a
+							   ) t
+							   group by view_count
+							  )
