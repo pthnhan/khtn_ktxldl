@@ -15,6 +15,9 @@ from time import sleep
 import json
 
 
+
+
+
 if __name__ == '__main__':
     a = DBRequestor()
     database = 'youtube'
@@ -39,6 +42,8 @@ if __name__ == '__main__':
             slackclient.chat_postMessage(channel = '#data_status',
                                          text = "TABLE: vn_ytb_trending! There are {} rows has been saved to the table!".format(
                                              len(data_vn)))
+            category_data = a.get_df_by_query("select * from video_categories")
+
         else:
             slackclient.chat_postMessage(channel = '#data_status',
                                          text = "TABLE: vn_ytb_trending!ERROR! Data will be crawled by contingency API !")

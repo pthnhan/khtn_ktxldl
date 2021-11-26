@@ -3,6 +3,8 @@ import os
 import sys
 from tabulate import tabulate
 import pandas as pd
+from time import sleep
+import slack
 
 sys.path.append(os.getcwd())
 try:
@@ -28,7 +30,7 @@ def get_top10(data):
     return df
 
 
-def get_no_of_hours_on_trending(data_top10, engine, to_sql = False):
+def get_no_of_hours_on_ytb_trending(data_top10, engine, to_sql = False, table_name=None):
     data = pd.DataFrame(data_top10, columns = ['runtime', 'title', 'trending_id'])
     dict_videos = {}
     count_videos = []
@@ -42,7 +44,7 @@ def get_no_of_hours_on_trending(data_top10, engine, to_sql = False):
     data['no_of_hour_on_trending'] = count_videos
     df = data.sort_values(by = ['runtime'], ascending = [True])
     if to_sql:
-        df.to_sql('vn_no_of_hours_on_ytb_trending',
+        df.to_sql(table_name,
                   con = engine,
                   if_exists = 'replace',
                   index = False,
@@ -51,12 +53,12 @@ def get_no_of_hours_on_trending(data_top10, engine, to_sql = False):
     return df
 
 
-def get_no_of_videos_in_each_category(data, category_data, engine, to_sql = False):
+def get_no_of_videos_in_each_category(data, category_data, engine, to_sql = False, table_name=None):
     data = pd.DataFrame(data, columns = ['runtime', 'video_id', 'category_id'])
     data = data.merge(category_data)
     data = data.sort_values(by = ['runtime'], ascending = [True])
     if to_sql:
-        data.to_sql('vn_no_of_top10videos_in_each_category',
+        data.to_sql(table_name,
                     con = engine,
                     if_exists = 'replace',
                     index = False,
@@ -65,12 +67,12 @@ def get_no_of_videos_in_each_category(data, category_data, engine, to_sql = Fals
     return data
 
 
-def count_views_in_each_category(data, category_data, engine, to_sql = False):
-    data = pd.DataFrame(data, columns = ['runtime', 'video_id', 'category_id', 'view_count'])
+def count_in_each_category(data, category_data, engine, to_sql = False, table_name=None):
+    data = pd.DataFrame(data, columns = ['runtime', 'video_id', 'category_id', 'view_count', 'likes', 'dislikes', 'comment_count'])
     data = data.merge(category_data)
     data = data.sort_values(by = ['runtime'], ascending = [True])
     if to_sql:
-        data.to_sql('vn_count_views_in_each_category',
+        data.to_sql(table_name,
                     con = engine,
                     if_exists = 'replace',
                     index = False,
@@ -91,12 +93,11 @@ if __name__ == '__main__':
     vn_trending = a.get_df_by_query("select * from vn_ytb_trending")
     category_data = a.get_df_by_query("select * from video_categories")
     data_top10 = get_top10(vn_trending)
-    data2 = count_views_in_each_category(vn_trending, category_data, engine, to_sql = True)
-    print(data2)
-    no_of_videos_in_each_category = a.get_df_by_query("""select distinct on (video_id)
-                                                        runtime, video_id, view_count, video_category
-                                                        from vn_count_views_in_each_category
-    """)
-    print(no_of_videos_in_each_category)
-
-#8WvgJ9tGKcs
+    no_of_hours_on_ytb_trending = get_no_of_hours_on_ytb_trending(data_top10, engine, to_sql = True, table_name = "vn_no_of_hours_on_ytb_trending")
+    no_of_videos_in_each_category = get_no_of_videos_in_each_category(vn_trending, category_data, engine, to_sql = True, table_name = "vn_no_of_videos_in_each_category")
+    no_of_top10videos_in_each_category = get_no_of_videos_in_each_category(data_top10, category_data, engine, to_sql = True, table_name = "vn_no_of_top10videos_in_each_category")
+    count_category = count_in_each_category(vn_trending, category_data, engine, to_sql = True, table_name = "vn_count_in_each_category")
+    sleep(120)
+    slackclient = slack.WebClient(token = os.environ['SLACK_TOKEN'])
+    slackclient.chat_postMessage(channel = '#data_status',
+                                 text = "CREATED SOME TABLES:\n\t vn_no_of_hours_on_ytb_trending\n\t vn_no_of_videos_in_each_category\n\t vn_no_of_top10videos_in_each_category\n\t vn_count_in_each_category")
