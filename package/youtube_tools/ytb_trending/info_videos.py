@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.getcwd())
 try:
-    from youtube_tools import setting
+    import setting
 except:
     print("No 'settings.py' file in ", os.getcwd())
 
