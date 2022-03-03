@@ -16,8 +16,8 @@ password = os.getenv('PASSWORD')
 host = os.getenv('HOST')
 port = os.getenv('PORT')
 df1 = video_categories_mapping()
-df2 = get_country_info()
-print(len(df1))
+exec("country_list = {}".format(os.getenv('COUNTRY_CODE')))
+df2 = get_country_info(country_list)
 engine = create_engine('postgresql://{}:{}@{}:5432/{}'.format(username, password, host, database))
 df1.to_sql('video_categories',
            con = engine,

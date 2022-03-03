@@ -22,7 +22,7 @@ import json
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-o", "--option", help = "VN or world", default = 10, type = int)  # VN is 1
+parser.add_argument("-o", "--option", help = "VN or world", default = 0, type = int)  # VN is 1
 parser.add_argument("-a", "--api_key", help = "API KEY", default = 10, type = int)  # 1 or 2
 args = parser.parse_args()
 
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                                                                                t.day),
                            mode = 'a+')
         country_codes = ['VN']
-        table_name = 'vn_ytb_trending_test'
+        table_name = 'vn_ytb_trending'
 
     api = args.api_key
 
